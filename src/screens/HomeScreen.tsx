@@ -5,22 +5,26 @@ import {
   Linking,
   FlatList,
   Platform,
+  StatusBar,
   StyleSheet,
+  ImageBackground,
   TouchableOpacity,
 } from 'react-native';
 
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import ImagePicker from 'react-native-image-crop-picker';
-import Icon from 'react-native-vector-icons/AntDesign';
-import {fetchVideo} from '../redux/actions/fetchVideoActions';
 import {Image, SafeAreaView, Text} from '@gluestack-ui/themed';
+
+import {fetchVideo} from '../redux/actions/fetchVideoActions';
+
+import {Icons, ItemSeparator} from '../components';
 
 import colors from '../utils/colors';
 import strings from '../utils/strings';
 import {ICONS} from '../../assets/icons';
 import {globalStyle} from '../utils/globalStyles';
-import {requestStoragePermission} from '../utils/globalFunction';
+import {height, requestStoragePermission} from '../utils/globalFunction';
 
 const HomeScreen = () => {
   const dispatch: any = useDispatch();
@@ -61,52 +65,61 @@ const HomeScreen = () => {
     }
   };
 
-  const removeVideo = (pathToRemove: string) => {
-    // Use filter to create a new array excluding the item with the specified id
+  const removeVideo = (modificationDate: string) => {
     const updatedVideoData = videoData.filter(
-      (video: any) => video?.path !== pathToRemove,
+      (video: any) => video?.modificationDate !== modificationDate,
     );
     setSelectedVideos(updatedVideoData);
     dispatch(fetchVideo(updatedVideoData));
   };
 
-  const renderItem = ({item, index}: {item: any; index: number}) => {
+  const onPressVideo = (item: any) => {
+    navigation.navigate('VideoScreen', {
+      item: item,
+    });
+  };
+
+  const renderItem = ({item}: {item: any}) => {
     return (
-      <TouchableOpacity
-        style={{margin: 24}}
-        onPress={() =>
-          navigation.navigate('VideoScreen', {
-            item: item,
-          })
-        }>
-        <Image
-          size="lg"
+      <View style={styles.renderVideo}>
+        <ImageBackground
+          resizeMode="cover"
           alt={strings.imageLoad}
           style={styles.rederImage}
-          source={{uri: 'https://dummyimage.com/600x400/000/fff'}}
-        />
-        <Icon
-          size={18}
-          name="minuscircle"
+          source={{uri: item?.path}}>
+          <Icons
+            size={45}
+            name="play-circle"
+            color={colors.black}
+            iconStyle={styles.playIcon}
+            onPress={() => onPressVideo(item)}
+          />
+        </ImageBackground>
+        <Icons
+          size={21}
           color={colors.red}
-          style={styles.removeIcon}
-          onPress={() => removeVideo(item?.path)}
+          name="minus-circle"
+          iconStyle={styles.removeIcon}
+          onPress={() => removeVideo(item?.modificationDate)}
         />
-        <Text style={styles.renderText}>{`Video ${index + 1}`}</Text>
-      </TouchableOpacity>
+      </View>
     );
   };
 
   return (
     <View style={globalStyle.container}>
+      <StatusBar hidden />
       <View style={globalStyle.container}>
         {videoData?.length || selectedVideos?.length ? (
           <FlatList
             numColumns={2}
             data={selectedVideos}
             renderItem={renderItem}
+            ListHeaderComponent={ItemSeparator}
+            ListFooterComponent={ItemSeparator}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{alignItems: 'center'}}
+            ItemSeparatorComponent={ItemSeparator}
+            columnWrapperStyle={styles.columnStyle}
           />
         ) : (
           <View style={styles.safeView}>
@@ -126,6 +139,10 @@ const HomeScreen = () => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
+  columnStyle: {
+    marginHorizontal: 12,
+    justifyContent: 'space-between',
+  },
   noData: {
     opacity: 0.6,
     color: colors.white,
@@ -135,21 +152,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  renderVideo: {
+    width: '49%',
+    height: height / 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   rederImage: {
+    width: '100%',
     borderWidth: 1,
     borderRadius: 12,
+    height: height / 3,
+    overflow: 'hidden',
+    alignSelf: 'center',
+    justifyContent: 'center',
     borderColor: colors.white,
+  },
+  playIcon: {
+    alignSelf: 'center',
   },
   removeIcon: {
     top: -6,
     right: -6,
     position: 'absolute',
-  },
-  renderText: {
-    fontSize: 12,
-    paddingTop: 6,
-    color: colors.white,
-    textAlign: 'center',
   },
   icon: {
     bottom: 30,
